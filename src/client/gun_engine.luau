@@ -1,4 +1,8 @@
+--!nolint LocalShadow
+--!strict
+
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 
 local Weapon = require(script.Parent.weapon)
 local Char = require(script.Parent.char)
@@ -10,8 +14,7 @@ local mouse = Players:GetMouse()
 local gun_engine = {}
 
 function gun_engine.raycast(weapon: Weapon.t, origin: Vector3, target: Vector3, range: number?): (Part?, Vector3)
-    -- bit of mutability but oh well
-    if range == nil then range = 1000 end -- default range to 1000 if none is provided
+    local range = range or 1000 -- default range to 1000 if none is provided
     local random = Random.new()
 
     local spread = (random:NextNumber(weapon.min_spread, weapon.max_spread) / 500) or 0
@@ -38,11 +41,11 @@ function gun_engine.raycast(weapon: Weapon.t, origin: Vector3, target: Vector3, 
 end
 
 function gun_engine.can_shoot(weapon: Weapon.t): boolean
-    return Battery.depleted(weapon.battery) and Char.alive()
+    return Battery.depleted(weapon.battery) and Char.alive() and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
 end
 
 function gun_engine.check_for_damage(weapon: Weapon.t, part: Part)
-
+    -- todo
 end
 
 function gun_engine.draw_ray(weapon: Weapon.t, end_pos: Vector3)
@@ -67,11 +70,23 @@ function gun_engine.shoot(weapon: Weapon.t)
     if origin == nil then return end -- character does not exist, dont shoot
     local part, position = gun_engine.raycast(weapon, origin, target)
     gun_engine.draw_ray(weapon, position)
-    gun_engine.check_for_damage(weapon, part)
+    if part ~= nil then
+        gun_engine.check_for_damage(weapon, part)
+    end
 end
 
 function gun_engine.fire(weapon: Weapon.t)
+    if gun_engine.can_shoot(weapon) == false then return end
 
+    Weapon.set_shooting(weapon, true)
+    if weapon.fire_mode == "Auto" then
+        repeat
+            gun_engine.shoot(weapon)
+        until gun_engine.can_shoot(weapon) == false
+    elseif weapon.fire_mode == "Semi" then
+        gun_engine.shoot(weapon)
+    end
+    Weapon.set_shooting(weapon, false)
 end
 
 return gun_engine
