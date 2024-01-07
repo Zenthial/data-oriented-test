@@ -49,6 +49,7 @@ function M.check_for_damage(weapon: Weapon.t, part: Part)
     -- todo
 end
 
+-- will need to replace Weapon.t with the individual data points we need, as this function should be reused for drawing other client's rays
 function M.draw_ray(weapon: Weapon.t, end_pos: Vector3)
     local start_pos = Weapon.muzzle(weapon)
     local i_dist = (end_pos - start_pos).Magnitude
