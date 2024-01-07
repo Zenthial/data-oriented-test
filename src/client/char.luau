@@ -6,9 +6,9 @@ local player = Players.LocalPlayer
 
 export type character = Model & { Humanoid: Humanoid & { Animator: Animator }}
 
-local char = {}
+local M = {}
 
-function char.origin(): Vector3?
+function M.origin(): Vector3?
     local character = player.Character
 
     if character and character:FindFirstChild("Head") then
@@ -18,7 +18,7 @@ function char.origin(): Vector3?
     end
 end
 
-function char.character(): character
+function M.character(): character
     if player.Character == nil then
         player.CharacterAdded:Wait()
     end
@@ -26,17 +26,17 @@ function char.character(): character
     return player.Character
 end
 
-function char.hum(): Humanoid
-    local c = char.character()
+function M.hum(): Humanoid
+    local c = M.character()
     if c:FindFirstChild("Humanoid") == nil then
         repeat task.wait() until c:FindFirstChild("Humanoid") ~= nil
     end
-    return char.character().Humanoid
+    return M.character().Humanoid
 end
 
 -- when we have damage this will flesh out
-function char.alive(): boolean
+function M.alive(): boolean
     return true
 end
 
-return char
+return M

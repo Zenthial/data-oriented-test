@@ -12,9 +12,9 @@ local Char = require(script.Parent.char)
 local Battery = require(script.Parent.battery)
 local Ignored = require(script.Parent.ignored)
 
-local gun_engine = {}
+local M = {}
 
-function gun_engine.raycast(weapon: Weapon.t, origin: Vector3, target: Vector3, range: number?): (Part?, Vector3)
+function M.raycast(weapon: Weapon.t, origin: Vector3, target: Vector3, range: number?): (Part?, Vector3)
     local range = range or 1000 -- default range to 1000 if none is provided
     local random = Random.new()
 
@@ -41,15 +41,15 @@ function gun_engine.raycast(weapon: Weapon.t, origin: Vector3, target: Vector3, 
     end
 end
 
-function gun_engine.can_shoot(weapon: Weapon.t): boolean
+function M.can_shoot(weapon: Weapon.t): boolean
     return Battery.depleted(weapon.battery) and Char.alive() and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
 end
 
-function gun_engine.check_for_damage(weapon: Weapon.t, part: Part)
+function M.check_for_damage(weapon: Weapon.t, part: Part)
     -- todo
 end
 
-function gun_engine.draw_ray(weapon: Weapon.t, end_pos: Vector3)
+function M.draw_ray(weapon: Weapon.t, end_pos: Vector3)
     local start_pos = Weapon.muzzle(weapon)
     local i_dist = (end_pos - start_pos).Magnitude
 
@@ -65,29 +65,29 @@ function gun_engine.draw_ray(weapon: Weapon.t, end_pos: Vector3)
     task.delay(0.1, bullet2.Destroy, bullet2)
 end
 
-function gun_engine.shoot(weapon: Weapon.t)
+function M.shoot(weapon: Weapon.t)
     local origin = Char.origin()
     local target = mouse.Position
     if origin == nil then return end -- character does not exist, dont shoot
-    local part, position = gun_engine.raycast(weapon, origin, target)
-    gun_engine.draw_ray(weapon, position)
+    local part, position = M.raycast(weapon, origin, target)
+    M.draw_ray(weapon, position)
     if part ~= nil then
-        gun_engine.check_for_damage(weapon, part)
+        M.check_for_damage(weapon, part)
     end
 end
 
-function gun_engine.fire(weapon: Weapon.t)
-    if gun_engine.can_shoot(weapon) == false then return end
+function M.fire(weapon: Weapon.t)
+    if M.can_shoot(weapon) == false then return end
 
     Weapon.set_shooting(weapon, true)
     if weapon.fire_mode == "Auto" then
         repeat
-            gun_engine.shoot(weapon)
-        until gun_engine.can_shoot(weapon) == false
+            M.shoot(weapon)
+        until M.can_shoot(weapon) == false
     elseif weapon.fire_mode == "Semi" then
-        gun_engine.shoot(weapon)
+        M.shoot(weapon)
     end
     Weapon.set_shooting(weapon, false)
 end
 
-return gun_engine
+return M

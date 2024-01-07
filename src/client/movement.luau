@@ -14,9 +14,9 @@ export type t = {
     playing_animations: { string }
 }
 
-local movement = {}
+local M = {}
 
-function movement.update_speed(mov: t)
+function M.update_speed(mov: t)
     local speed = 16 -- default walkspeed
 
     if mov.state == "Crouch" then speed -= 8
@@ -26,7 +26,7 @@ function movement.update_speed(mov: t)
     mov.hum.WalkSpeed = speed
 end
 
-function movement.update_animations(mov: t, ani: Animation.t)
+function M.update_animations(mov: t, ani: Animation.t)
     Animation.stop_all(ani, mov.playing_animations)
     table.clear(mov.playing_animations)
     if mov.state == "Crouch" then
@@ -42,12 +42,15 @@ function movement.update_animations(mov: t, ani: Animation.t)
         else
             mov.state = "Crouch"
         end
-        movement.update_animations(mov, ani)
-        movement.update_speed(mov)
     end
 end
 
-function movement.crouch(mov: t, ani: Animation.t)
+function M.update(mov, ani)
+    M.update_animations(mov, ani)
+    M.update_speed(mov)
+end
+
+function M.crouch(mov: t, ani: Animation.t)
     -- to whoever is reading this in the future, tom of 1/06/24 liked this format
     -- because he had been doing a lot of OCaml. he thought it was more clear and concise
     if mov.state == "Walk" then mov.state = "Crouch"
@@ -56,36 +59,34 @@ function movement.crouch(mov: t, ani: Animation.t)
     elseif mov.state == "Sprint" then mov.state = "Roll"
     end
 
-    movement.update_animations(mov, ani)
-    movement.update_speed(mov)
+    M.update(mov, ani)
 end
 
-function movement.sprint(mov: t, ani: Animation.t)
+function M.sprint(mov: t, ani: Animation.t)
     if mov.state == "Walk" or mov.state == "Crouch" then mov.state = "Sprint"
     elseif mov.state == "Sprint" then mov.state = "Walk"
     elseif mov.state == "Roll" then return
     end
 
-    movement.update_animations(mov, ani)
-    movement.update_speed(mov)
+    M.update(mov, ani)
 end
 
-function movement.make(hum: Humanoid): t
+function M.make(hum: Humanoid): t
     return { state = "Walk", hum = hum, playing_animations = {} }
 end
 
-function movement.began(mov: t, ani: Animation.t, input: InputObject)
+function M.began(mov: t, ani: Animation.t, input: InputObject)
     if input.KeyCode == Keymaps.crouch then
-        movement.crouch(mov, ani)
+        M.crouch(mov, ani)
     elseif input.KeyCode == Keymaps.sprint then
-        movement.sprint(mov, ani)
+        M.sprint(mov, ani)
     end
 end
 
-function movement.ended(mov: t, ani: Animation.t, input: InputObject)
+function M.ended(mov: t, ani: Animation.t, input: InputObject)
     if input.KeyCode == Keymaps.sprint then
-        movement.sprint(mov, ani)
+        M.sprint(mov, ani)
     end
 end
 
-return movement
+return M

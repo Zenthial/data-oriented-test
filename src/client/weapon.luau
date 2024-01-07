@@ -18,13 +18,13 @@ export type t = {
     model: Model & { Muzzle: Part }
 }
 
-local weapon = {}
+local M = {}
 
-function weapon.muzzle(weapon: t): Vector3
+function M.muzzle(weapon: t): Vector3
     return weapon.model.Muzzle.Position
 end
 
-function weapon.bullet(weapon: t): Part & { Mesh: SpecialMesh }
+function M.bullet(weapon: t): Part & { Mesh: SpecialMesh }
     local weapon_folder = weapons:FindFirstChild(weapon.identifier)
     if weapon_folder == nil then error("No weapon folder for " .. weapon.identifier) end
 
@@ -34,10 +34,10 @@ function weapon.bullet(weapon: t): Part & { Mesh: SpecialMesh }
     return bullet
 end
 
-function weapon.set_shooting(weapon: t, shooting: boolean): t
+function M.set_shooting(weapon: t, shooting: boolean): t
     weapon.shooting = true
 
     return weapon
 end
 
-return weapon
+return M

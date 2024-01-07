@@ -5,13 +5,13 @@ export type t = {
     recharge_delay: number,
 }
 
-local battery = {}
+local M = {}
 
-function battery.depleted(bat: t): boolean
+function M.depleted(bat: t): boolean
     return bat.charge > 0
 end
 
-function battery.recharge(bat: t)
+function M.recharge(bat: t)
     task.wait(bat.recharge_delay)
     while bat.charge ~= 100 do
         bat.charge = math.clamp(bat.charge + bat.recharge_rate, 0, 100)
@@ -19,11 +19,11 @@ function battery.recharge(bat: t)
     end
 end
 
-function battery.use(bat: t)
+function M.use(bat: t)
     bat.charge = math.clamp(bat.charge - bat.depletion_rate, 0, 100)
     if bat.charge == 0 then
-        task.spawn(battery.recharge, bat)
+        task.spawn(M.recharge, bat)
     end
 end
 
-return battery
+return M
