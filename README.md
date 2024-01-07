@@ -6,6 +6,8 @@ Types are declared in a module. Modules provide functions to operate on that typ
 
 The usage of `not` is heavily avoided, especially in if statements. It is clearer to use `==`
 
+All internal module names should be `M`. This helps the programmer reason about where a function call is coming from, and also saves on character space, improving readbility
+
 ## A few notes about file organization
 Files should be organized in this format:
 ```
@@ -16,6 +18,8 @@ Service imports
 Service defined variables (like Players.LocalPlayer)
 
 Required modules
+
+Local functions
 
 Module level constants
 
