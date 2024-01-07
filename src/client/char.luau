@@ -1,10 +1,14 @@
 --!strict
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local shared = ReplicatedStorage:WaitForChild("Shared")
 local player = Players.LocalPlayer
 
-export type character = Model & { Humanoid: Humanoid & { Animator: Animator }}
+local types = require(shared.types)
+
+type character = types.character
 
 local M = {}
 

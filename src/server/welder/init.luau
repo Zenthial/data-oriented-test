@@ -12,8 +12,8 @@ type t = {
 }
 
 local function inverse_weld(part0: BasePart, part1: BasePart, c0: CFrame?, c1: CFrame?)
-    assert(part0, "Part0 does not exist")
-    assert(part1, "Part1 does not exist")
+    assert(part0 ~= nil, "Part0 does not exist")
+    assert(part1 ~= nil, "Part1 does not exist")
     local weld = part0:FindFirstChild("HandleWeld") :: ManualWeld
     if not weld then
         weld = Instance.new("ManualWeld")
@@ -35,13 +35,13 @@ end
 
 local M = {}
 
-function M.weld(char: Model, weapon: Model, weapon_name: string, unequipped: boolean)
-    local welds = Handles[weapon_name]
+function M.weld(char: Model, item: Model, item_name: string, unequip: boolean)
+    local welds = Handles[item_name]
 
-    if unequipped then welds = Holsters.Back end
+    if unequip then welds = Holsters.Back end
 
     for i, weld in welds do
-	local handle = weapon:FindFirstChild("Handle"..tostring((i > 1) and i or ""))
+	local handle = item:FindFirstChild("Handle"..tostring((i > 1 and i) or ""))
 	local limbName = weld.limb
 	local limb = char:FindFirstChild(limbName)
 	inverse_weld(handle, limb, weld.C0, weld.C1)
