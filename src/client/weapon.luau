@@ -1,7 +1,8 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
-local Weapons = ReplicatedStorage:WaitForChild("Weapons")
+
+local weapons = ReplicatedStorage:WaitForChild("Weapons")
 
 local Battery = require(script.Parent.battery)
 
@@ -24,7 +25,7 @@ function weapon.muzzle(weapon: t): Vector3
 end
 
 function weapon.bullet(weapon: t): Part & { Mesh: SpecialMesh }
-    local weapon_folder = Weapons:FindFirstChild(weapon.identifier)
+    local weapon_folder = weapons:FindFirstChild(weapon.identifier)
     if weapon_folder == nil then error("No weapon folder for " .. weapon.identifier) end
 
 

@@ -4,12 +4,13 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
 local Weapon = require(script.Parent.weapon)
 local Char = require(script.Parent.char)
 local Battery = require(script.Parent.battery)
 local Ignored = require(script.Parent.ignored)
-
-local mouse = Players:GetMouse()
 
 local gun_engine = {}
 
