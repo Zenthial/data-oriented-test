@@ -3,6 +3,7 @@
 
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local shared = ReplicatedStorage:WaitForChild("Shared")
 
@@ -14,6 +15,7 @@ local Animation = require(script.animation)
 local Inventory = require(script.inventory)
 local Weapon = require(script.weapon)
 local Gun_engine = require(script.gun_engine)
+local Ui = require(script.ui)
 local Char = require(script.char)
 
 -- main entrypoint of the client side program
@@ -50,6 +52,12 @@ local function main()
         Inventory.add(inv, w, slot)
 
         Weapon.load_anis(w, ani)
+    end)
+
+    UserInputService.MouseIconEnabled = false
+    Ui.close_cursor()
+    RunService.RenderStepped:Connect(function()
+        Ui.cursor(UserInputService:GetMouseLocation())
     end)
 end
 

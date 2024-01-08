@@ -4,6 +4,7 @@ export type slot = "Primary" | "Secondary"
 export type t = {
     name: string,
     slot: slot,
+    quick_desc: string,
     -- gun shooting info
     fire_mode: fire_mode,
     min_spread: number, max_spread: number, no_spread_distance: number,
@@ -19,6 +20,7 @@ local configs: { t } = {
     {
         name = "W17",
         slot = "Primary",
+        quick_desc = "Standard Issue Rifle",
         fire_mode = "Auto",
         min_spread = 0.5, max_spread = 2.5, no_spread_distance = 0,
         fire_rate = 11,

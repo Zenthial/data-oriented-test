@@ -13,7 +13,7 @@ local Animation = require(script.Parent.animation)
 export type t = Weapon_configs.t & {
     shooting: boolean,
     battery: Battery.t,
-    model: Model & { Muzzle: Part }
+    model: Model & { Barrel: Part, Handle: Part, Hologram: Part }
 }
 
 local M = {}
@@ -40,8 +40,16 @@ function M.load_anis(w: t, ani: Animation.t)
     Animation.load(ani, animation_folder:GetChildren(), w.name)
 end
 
-function M.muzzle(weapon: t): Vector3
-    return weapon.model.Muzzle.Position
+function M.barrel(weapon: t): Vector3
+    return weapon.model.Barrel.Position
+end
+
+function M.hologram(weapon: t): Vector3
+    return weapon.model.Hologram.Position
+end
+
+function M.handle(weapon: t): Vector3
+    return weapon.model.Handle.Position
 end
 
 function M.bullet(weapon: t): Part & { Mesh: SpecialMesh }

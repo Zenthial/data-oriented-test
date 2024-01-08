@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
@@ -14,11 +15,14 @@ local Movement = require(script.Parent.movement)
 local Animation = require(script.Parent.animation)
 local Weapon = require(script.Parent.weapon)
 local Char = require(script.Parent.char)
+local Ui = require(script.Parent.ui)
 local Battery = require(script.Parent.battery)
 local Listener = require(script.Parent.listener)
 local Ignored = require(script.Parent.ignored)
 
-local M = {}
+local M = {
+    weapon_equiping = false
+}
 
 function M.raycast(weapon: Weapon.t, origin: Vector3, target: Vector3, range: number?): (Part?, Vector3)
     local range = range or 1000 -- default range to 1000 if none is provided
@@ -57,7 +61,7 @@ end
 
 -- will need to replace Weapon.t with the individual data points we need, as this function should be reused for drawing other client's rays
 function M.draw_ray(weapon: Weapon.t, end_pos: Vector3)
-    local start_pos = Weapon.muzzle(weapon)
+    local start_pos = Weapon.barrel(weapon)
     local i_dist = (end_pos - start_pos).Magnitude
 
     local bullet1 = Weapon.bullet(weapon)
@@ -98,6 +102,7 @@ function M.fire(weapon: Weapon.t)
 end
 
 function M.unequip_weapon(w: Weapon.t, ani: Animation.t)
+    M.weapon_equiping = true
     for animation_name, _ in ani.playing do
         if string.find(animation_name, "sprinting") then
             Animation.stop(ani, animation_name)
@@ -113,9 +118,12 @@ function M.unequip_weapon(w: Weapon.t, ani: Animation.t)
     end
 
     Listener.send("weld", w.name, true)
+    task.spawn(Ui.close_cursor)
+    M.weapon_equiping = false
 end
 
-function M.equip_weapon(w: Weapon.t, ani: Animation.t, sprinting: boolean)
+function M.equip_weapon(w: Weapon.t, inv: Inventory.t<Weapon.t>, ani: Animation.t, sprinting: boolean)
+    M.weapon_equiping = true
     Listener.send("weld", w.name, false)
 
     Animation.play(ani, w.name.."equippingArm")
@@ -127,6 +135,31 @@ function M.equip_weapon(w: Weapon.t, ani: Animation.t, sprinting: boolean)
     else
         Animation.play_all(ani, { w.name .. "equipMiddle", w.name .. "equipTop" })
     end
+
+    local top_text = string.format('<font color="#FF7800">%s</font>', w.name)
+    local bottom_text = w.quick_desc
+    local tooltip = Ui.make_tooltip(Weapon.hologram(w), Char.origin(), top_text, bottom_text)
+    local con
+
+    local function cleanup()
+        if con ~= nil then
+            con:Disconnect()
+        end
+
+        Ui.remove_tooltip(tooltip)
+    end
+    con = RunService.RenderStepped:Connect(function()
+        local equipped_item = inv.equipped_item :: Weapon.t -- type thing because luau lsp complains otherwise
+        if equipped_item ~= w then
+            cleanup()
+            return
+        end
+        tooltip = Ui.draw_tooltip(Weapon.hologram(w), Char.origin(), top_text, bottom_text, tooltip)
+    end)
+
+    task.delay(2, cleanup)
+    task.spawn(Ui.open_cursor)
+    M.weapon_equiping = false
 end
 
 function M.began(inv: Inventory.t<Weapon.t>, mov: Movement.t, ani: Animation.t, input: InputObject)
@@ -137,12 +170,13 @@ function M.began(inv: Inventory.t<Weapon.t>, mov: Movement.t, ani: Animation.t, 
         w = Inventory.get(inv, Keymaps.secondary.Value)
     end
     if w == nil then return end
+    if M.weapon_equiping == true then return end
 
     if inv.equipped_item == w then
-        M.unequip_weapon(w, ani)
         Inventory.unequip(inv)
+        M.unequip_weapon(w, ani)
     else
-        M.equip_weapon(w, ani, mov.state == "Sprint")
+        M.equip_weapon(w, inv, ani, mov.state == "Sprint")
         Inventory.equip(inv, w)
     end
 end
