@@ -1,15 +1,21 @@
 --!nolint LocalShadow
---!strict
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
+local shared = ReplicatedStorage:WaitForChild("Shared")
 
+local Keymaps = require(shared.keymaps)
+local Inventory = require(script.Parent.inventory)
+local Movement = require(script.Parent.movement)
+local Animation = require(script.Parent.animation)
 local Weapon = require(script.Parent.weapon)
 local Char = require(script.Parent.char)
 local Battery = require(script.Parent.battery)
+local Listener = require(script.Parent.listener)
 local Ignored = require(script.Parent.ignored)
 
 local M = {}
@@ -89,6 +95,56 @@ function M.fire(weapon: Weapon.t)
         M.shoot(weapon)
     end
     Weapon.set_shooting(weapon, false)
+end
+
+function M.unequip_weapon(w: Weapon.t, ani: Animation.t)
+    for animation_name, _ in ani.playing do
+        if string.find(animation_name, "sprinting") then
+            Animation.stop(ani, animation_name)
+        end
+    end
+
+    Animation.stop_all(ani, { w.name .. "equipMiddle", w.name .. "equipTop" })
+
+    if w.slot == "Primary" then
+        Animation.play(ani, w.name.."equippingArm")
+        task.wait(0.3) -- equip time
+        Animation.stop(ani, w.name.."equippingArm")
+    end
+
+    Listener.send("weld", w.name, true)
+end
+
+function M.equip_weapon(w: Weapon.t, ani: Animation.t, sprinting: boolean)
+    Listener.send("weld", w.name, false)
+
+    Animation.play(ani, w.name.."equippingArm")
+    task.wait(0.3) -- equip time
+    Animation.stop(ani, w.name.."equippingArm")
+
+    if sprinting then
+        Animation.play_all(ani, { w.name .. "sprintingMiddle", w.name .. "sprintingTop" })
+    else
+        Animation.play_all(ani, { w.name .. "equipMiddle", w.name .. "equipTop" })
+    end
+end
+
+function M.began(inv: Inventory.t<Weapon.t>, mov: Movement.t, ani: Animation.t, input: InputObject)
+    local w
+    if input.KeyCode == Keymaps.primary then
+        w = Inventory.get(inv, Keymaps.primary.Value)
+    elseif input.KeyCode == Keymaps.secondary then
+        w = Inventory.get(inv, Keymaps.secondary.Value)
+    end
+    if w == nil then return end
+
+    if inv.equipped_item == w then
+        M.unequip_weapon(w, ani)
+        Inventory.unequip(inv)
+    else
+        M.equip_weapon(w, ani, mov.state == "Sprint")
+        Inventory.equip(inv, w)
+    end
 end
 
 return M

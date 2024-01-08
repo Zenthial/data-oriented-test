@@ -42,6 +42,7 @@ function M.give_items(p: t)
         if model == nil then error(item .. " does not exist") end
 
         local item_model = model.Model:Clone()
+        item_model.Name = item
         item_model.Parent = char
 
         Welder.weld(char, item_model, item, true)

@@ -13,6 +13,7 @@ export type t = {
 local function load_default_animations(ani: t): t
     for _, animation in global_animations:GetChildren() do
         if animation:IsA("Animation") then
+            if ani.tracks[animation.Name] ~= nil then continue end
             local track = ani.animator:LoadAnimation(animation)
             ani.tracks[animation.Name] = track
         end
@@ -33,10 +34,12 @@ function M.make(instance: Instance): t
     return ani
 end
 
-function M.load(ani: t, animations: { Animation }): t
+function M.load(ani: t, animations: { Animation }, name_prefix: string?): t
     for _, animation in animations do
         local track = ani.animator:LoadAnimation(animation)
-        ani.tracks[animation.Name] = track
+        local name = (name_prefix or "") .. animation.Name
+        if ani.tracks[name] ~= nil then continue end
+        ani.tracks[name] = track
     end
 
     return ani
@@ -59,7 +62,7 @@ end
 
 function M.stop(ani: t, track: string)
     local playing_track = ani.playing[track]
-    if playing_track == nil then warn("Track " .. track .. " is not playing"); return end
+    if playing_track == nil then return end
     ani.playing[track] = nil
 
     playing_track:Stop()
@@ -69,6 +72,15 @@ function M.stop_all(ani: t, tracks: { string })
     for _, track in tracks do
         M.stop(ani, track)
     end
+end
+
+function M.stop_playing(ani: t)
+    for _, track in ani.playing do
+        if track == nil then continue end
+        track:Stop()
+    end
+
+    table.clear(ani.playing)
 end
 
 return M
