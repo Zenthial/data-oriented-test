@@ -45,8 +45,9 @@ local M = {
 function M.raycast(weapon: Weapon.t, origin: Vector3, target: Vector3, range: number?): (Part?, Vector3)
     local range = range or 1000 -- default range to 1000 if none is provided
     local distance = (origin - target).Magnitude
+    local pre_distance = (Weapon.barrel(weapon) - target).Magnitude
     -- we check if we should apply spread. certain guns are dead accurate from close range, similar to old SMO STAs
-    local aim = if distance > weapon.no_spread_distance then target + get_aim(weapon, distance) else target
+    local aim = if distance > weapon.no_spread_distance then target + get_aim(weapon, pre_distance) else target
 
     local end_pos = (aim - origin).Unit * range
     local result = workspace:Raycast(origin, end_pos, Ignored.raycast_params())
@@ -84,7 +85,7 @@ function M.draw_ray(weapon: Weapon.t, end_pos: Vector3)
     task.delay(0.1, bullet2.Destroy, bullet2)
 end
 
-function M.shoot(weapon: Weapon.t)
+function M.shoot(weapon: Weapon.t, inv: Inventory.t<Weapon.t>)
     local origin = Char.origin()
     local target = mouse.Hit.Position
     if origin == nil then return end -- character does not exist, dont shoot
@@ -93,19 +94,23 @@ function M.shoot(weapon: Weapon.t)
     if part ~= nil then
         M.check_for_damage(weapon, part)
     end
+    Battery.use(weapon.battery)
+    if weapon.battery.overheated then
+        M.overheat(weapon, inv)
+    end
 end
 
-function M.fire(weapon: Weapon.t)
+function M.fire(weapon: Weapon.t, inv: Inventory.t<Weapon.t>)
     if M.can_shoot(weapon) == false then return end
 
     Weapon.set_shooting(weapon, true)
     if weapon.fire_mode == "Auto" then
         repeat
-            M.shoot(weapon)
+            M.shoot(weapon, inv)
             task.wait(1 / weapon.fire_rate)
         until M.can_shoot(weapon) == false
     elseif weapon.fire_mode == "Semi" then
-        M.shoot(weapon)
+        M.shoot(weapon, inv)
     end
     Weapon.set_shooting(weapon, false)
 end
@@ -199,7 +204,7 @@ end
 function M.began(inv: Inventory.t<Weapon.t>, mov: Movement.t, ani: Animation.t, input: InputObject)
     if input.UserInputType == Keymaps.shoot then
         if inv.equipped_item ~= nil then
-            M.fire(inv.equipped_item)
+            M.fire(inv.equipped_item, inv)
         end
     end
     local w
