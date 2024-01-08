@@ -22,7 +22,7 @@ local configs: { t } = {
         slot = "Primary",
         quick_desc = "Standard Issue Rifle",
         fire_mode = "Auto",
-        min_spread = 0.5, max_spread = 2.5, no_spread_distance = 0,
+        min_spread = 0.5, max_spread = 5, no_spread_distance = 0,
         fire_rate = 11,
         damage = 7, headshot_mul = 2,
         depletion_rate = 2,

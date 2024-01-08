@@ -20,27 +20,33 @@ local Battery = require(script.Parent.battery)
 local Listener = require(script.Parent.listener)
 local Ignored = require(script.Parent.ignored)
 
+local AIMBUFF = 3
+
+local function get_aim(w: Weapon.t, dist: number)
+    local minspread = w.min_spread
+	local maxspread = w.max_spread
+	
+	if w.aiming then
+		minspread = minspread / AIMBUFF
+		maxspread = maxspread / AIMBUFF
+	end
+	
+	local spread = maxspread * (w.recoil / 100) + minspread
+	local x = math.random(-(spread/10) * dist, (spread/10) * dist)/10
+	local y = math.random(-(spread/10) * dist, (spread/10) * dist)/10
+	local z = math.random(-(spread/10) * dist, (spread/10) * dist)/10
+	return Vector3.new(x,y,z)
+end
+
 local M = {
     weapon_equiping = false
 }
 
 function M.raycast(weapon: Weapon.t, origin: Vector3, target: Vector3, range: number?): (Part?, Vector3)
     local range = range or 1000 -- default range to 1000 if none is provided
-    local random = Random.new()
-
-    local spread = (random:NextNumber(weapon.min_spread, weapon.max_spread) / 500) or 0
     local distance = (origin - target).Magnitude
-    local spread_variance = spread * distance
-    local aim = target
-
     -- we check if we should apply spread. certain guns are dead accurate from close range, similar to old SMO STAs
-    if distance > weapon.no_spread_distance then
-        aim = Vector3.new(
-            target.X + random:NextNumber(-spread_variance, spread_variance),
-            target.Y + random:NextNumber(-spread_variance, spread_variance),
-            target.Z + random:NextNumber(-spread_variance, spread_variance)
-        )
-    end
+    local aim = if distance > weapon.no_spread_distance then target + get_aim(weapon, distance) else target
 
     local end_pos = (aim - origin).Unit * range
     local result = workspace:Raycast(origin, end_pos, Ignored.raycast_params())
@@ -67,10 +73,12 @@ function M.draw_ray(weapon: Weapon.t, end_pos: Vector3)
     local bullet1 = Weapon.bullet(weapon)
     bullet1.Mesh.Scale = Vector3.new(bullet1.Mesh.Scale.X, bullet1.Mesh.Scale.Y, i_dist)
     bullet1.CFrame = CFrame.new(start_pos, end_pos) * CFrame.new(0, 0, -i_dist / 2)
+    bullet1.Parent = workspace
     
     local bullet2 = Weapon.bullet(weapon)
     bullet2.Mesh.Scale = Vector3.new(bullet1.Mesh.Scale.X, bullet1.Mesh.Scale.Y, i_dist)
     bullet2.CFrame = CFrame.new(start_pos, end_pos) * CFrame.new(0, 0, -i_dist / 2)
+    bullet1.Parent = workspace
 
     task.delay(0.05, bullet1.Destroy, bullet1)
     task.delay(0.1, bullet2.Destroy, bullet2)
@@ -78,7 +86,7 @@ end
 
 function M.shoot(weapon: Weapon.t)
     local origin = Char.origin()
-    local target = mouse.Position
+    local target = mouse.Hit.Position
     if origin == nil then return end -- character does not exist, dont shoot
     local part, position = M.raycast(weapon, origin, target)
     M.draw_ray(weapon, position)
@@ -94,6 +102,7 @@ function M.fire(weapon: Weapon.t)
     if weapon.fire_mode == "Auto" then
         repeat
             M.shoot(weapon)
+            task.wait(1 / weapon.fire_rate)
         until M.can_shoot(weapon) == false
     elseif weapon.fire_mode == "Semi" then
         M.shoot(weapon)
@@ -118,7 +127,7 @@ function M.unequip_weapon(w: Weapon.t, ani: Animation.t)
     end
 
     Listener.send("weld", w.name, true)
-    task.spawn(Ui.close_cursor)
+    -- task.spawn(Ui.close_cursor)
     M.weapon_equiping = false
 end
 
@@ -138,9 +147,8 @@ function M.equip_weapon(w: Weapon.t, inv: Inventory.t<Weapon.t>, ani: Animation.
 
     local top_text = string.format('<font color="#FF7800">%s</font>', w.name)
     local bottom_text = w.quick_desc
-    local tooltip = Ui.make_tooltip(Weapon.hologram(w), Char.origin(), top_text, bottom_text)
+    local tooltip = Ui.make_tooltip()
     local con
-
     local function cleanup()
         if con ~= nil then
             con:Disconnect()
@@ -154,15 +162,46 @@ function M.equip_weapon(w: Weapon.t, inv: Inventory.t<Weapon.t>, ani: Animation.
             cleanup()
             return
         end
-        tooltip = Ui.draw_tooltip(Weapon.hologram(w), Char.origin(), top_text, bottom_text, tooltip)
+        tooltip = Ui.draw_tooltip(Weapon.hologram(w), Char.origin(), top_text, bottom_text, tooltip, true, w.slot)
     end)
 
     task.delay(2, cleanup)
-    task.spawn(Ui.open_cursor)
+    -- task.spawn(Ui.open_cursor)
     M.weapon_equiping = false
 end
 
+function M.overheat(w: Weapon.t, inv: Inventory.t<Weapon.t>)
+    local top_text = '<font color="#eb144c">overheated</font>'
+    local bottom_text = "battery overheated"
+
+    local tooltip = Ui.make_tooltip()
+    local con
+    local function cleanup()
+        if con ~= nil then
+            con:Disconnect()
+        end
+
+        Ui.remove_tooltip(tooltip)
+    end
+    con = RunService.RenderStepped:Connect(function()
+        local equipped_item = inv.equipped_item :: Weapon.t -- type thing because luau lsp complains otherwise
+        if w.battery.overheated == false then
+            cleanup()
+            return
+        end
+        tooltip = Ui.draw_tooltip(Weapon.hologram(w), Char.origin(), top_text, bottom_text, tooltip, equipped_item == w, w.slot)
+    end)
+
+    task.delay(2, cleanup)
+    Ui.set_overheated(w.model)
+end
+
 function M.began(inv: Inventory.t<Weapon.t>, mov: Movement.t, ani: Animation.t, input: InputObject)
+    if input.UserInputType == Keymaps.shoot then
+        if inv.equipped_item ~= nil then
+            M.fire(inv.equipped_item)
+        end
+    end
     local w
     if input.KeyCode == Keymaps.primary then
         w = Inventory.get(inv, Keymaps.primary.Value)

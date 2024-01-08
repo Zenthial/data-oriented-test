@@ -10,12 +10,18 @@ local Weapon_configs = require(shared.weapon_configs)
 local Battery = require(script.Parent.battery)
 local Animation = require(script.Parent.animation)
 
-export type t = Weapon_configs.t & {
+type weapon_model = Model & { Barrel: Part, Handle: Part, Hologram: Part }
+
+type state = {
+    aiming: boolean,
+    has_equipped: boolean,
     shooting: boolean,
+    recoil: number,
     battery: Battery.t,
-    model: Model & { Barrel: Part, Handle: Part, Hologram: Part }
+    model: weapon_model
 }
 
+export type t = Weapon_configs.t & state
 local M = {}
 
 function M.make(weapon_name: string, model: Model): t 
@@ -25,10 +31,13 @@ function M.make(weapon_name: string, model: Model): t
     end
 
     local w = table.clone(config)
-    local state = {
+    local state: state = {
+        aiming = false,
+        has_equipped = false,
         shooting = false,
+        recoil = 0,
         battery = Battery.make(w.depletion_rate, w.recharge_time, w.recharge_delay),
-        model = model
+        model = model :: weapon_model
     }
 
     return Util.merge(w, state) :: t

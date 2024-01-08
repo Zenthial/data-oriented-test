@@ -54,11 +54,12 @@ local function main()
         Weapon.load_anis(w, ani)
     end)
 
-    UserInputService.MouseIconEnabled = false
-    Ui.close_cursor()
-    RunService.RenderStepped:Connect(function()
-        Ui.cursor(UserInputService:GetMouseLocation())
-    end)
+    -- UserInputService.MouseIconEnabled = false
+    -- Ui.close_cursor()
+    -- RunService.RenderStepped:Connect(function()
+    --     Ui.cursor(UserInputService:GetMouseLocation())
+    -- end)
+    Ui.set_icon()
 end
 
 main()

@@ -3,4 +3,5 @@ return {
     sprint = Enum.KeyCode.LeftShift,
     primary = Enum.KeyCode.One,
     secondary = Enum.KeyCode.Two,
+    shoot = Enum.UserInputType.MouseButton1
 }

@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
 
 local shared = ReplicatedStorage:WaitForChild("Shared")
 local weapons = ReplicatedStorage:WaitForChild("Weapons")
@@ -45,10 +46,22 @@ function M.give_items(p: t)
         item_model.Name = item
         item_model.Parent = char
 
+        CollectionService:AddTag(item_model, "ignore")
+
         Welder.weld(char, item_model, item, true)
 
         -- the client listens on "item" as an instruction that tells them when they receive an item (weapon)
         Listener.send_to("item", p.instance, item)
+    end
+end
+
+function M.ignore(p: t)
+    local char = wait_for_char(p.instance)
+
+    for _, thing in char:GetChildren() do
+        if thing:IsA("Accessory") then
+            CollectionService:AddTag(thing, "ignore")
+        end
     end
 end
 
